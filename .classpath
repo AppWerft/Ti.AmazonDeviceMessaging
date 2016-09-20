@@ -13,5 +13,6 @@
 			<attribute name="optional" value="true"/>
 		</attributes>
 	</classpathentry>
+	<classpathentry kind="lib" path="/Users/fuerst/Documents/APPC_WORKSPACE/Ti.AmazonDeviceManaging/android/lib/amazon-device-messaging-1.0.1.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
