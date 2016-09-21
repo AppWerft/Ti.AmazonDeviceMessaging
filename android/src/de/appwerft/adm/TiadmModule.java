@@ -10,56 +10,148 @@ package de.appwerft.adm;
 
 import org.appcelerator.kroll.KrollModule;
 import org.appcelerator.kroll.annotations.Kroll;
-
-import org.appcelerator.titanium.TiApplication;
 import org.appcelerator.kroll.common.Log;
-import org.appcelerator.kroll.common.TiConfig;
+import org.appcelerator.titanium.TiApplication;
 
+import android.content.Intent;
+import android.os.Bundle;
 
-@Kroll.module(name="Tiadm", id="de.appwerft.adm")
-public class TiadmModule extends KrollModule
-{
+import com.amazon.device.messaging.ADM;
+import com.amazon.device.messaging.ADMMessageHandlerBase;
+import com.amazon.device.messaging.ADMMessageReceiver;
+import com.amazon.device.messaging.development.ADMManifest;
+
+@Kroll.module(name = "Tiadm", id = "de.appwerft.adm")
+public class TiadmModule extends KrollModule {
 
 	// Standard Debugging variables
 	private static final String LCAT = "TiadmModule";
-	private static final boolean DBG = TiConfig.LOGD;
+	private boolean ADMAvailable = false;
+	private ADM adm;
 
 	// You can define constants with @Kroll.constant, for example:
 	// @Kroll.constant public static final String EXTERNAL_NAME = value;
 
-	public TiadmModule()
-	{
+	public TiadmModule() {
 		super();
+		adm = new ADM(TiApplication.getInstance());
+		try {
+			ADMManifest.checkManifestAuthoredProperly(TiApplication
+					.getInstance());
+		} catch (Exception e) {
+			Log.e(LCAT,
+					"Something is wrong with you manifest entries.\nhttps://developer.amazon.com/public/apis/engage/device-messaging/tech-docs/04-integrating-your-app-with-adm");
+			e.printStackTrace();
+		}
 	}
 
 	@Kroll.onAppCreate
-	public static void onAppCreate(TiApplication app)
-	{
-		Log.d(LCAT, "inside onAppCreate");
-		// put module init code that needs to run when the application is created
+	public static void onAppCreate(TiApplication app) {
 	}
 
 	// Methods
 	@Kroll.method
-	public String example()
-	{
-		Log.d(LCAT, "example called");
-		return "hello world";
+	public boolean isAvailable() {
+		try {
+			Class.forName("com.amazon.device.messaging.ADM");
+			ADMAvailable = true;
+		} catch (ClassNotFoundException e) {
+			// Handle the exception.
+		}
+		return ADMAvailable;
 	}
 
-	// Properties
-	@Kroll.getProperty
-	public String getExampleProp()
-	{
-		Log.d(LCAT, "get example property");
-		return "hello world";
+	@Kroll.method
+	public void checkManifestAuthoredProperly() {
+		// IllegalStateException
+
 	}
 
+	@Kroll.method
+	public String startRegister() {
+		String id = adm.getRegistrationId();
+		if (adm.getRegistrationId() == null) {
+			adm.startRegister();
+		}
+		return id;
+	}
 
-	@Kroll.setProperty
-	public void setExampleProp(String value) {
-		Log.d(LCAT, "set example property: " + value);
+	public class mADMMessageHandler extends ADMMessageHandlerBase {
+		public static class Receiver extends ADMMessageReceiver {
+			public Receiver() {
+				super(mADMMessageHandler.class);
+			}
+
+			// Nothing else is required here; your broadcast receiver
+			// automatically
+			// forwards intents to your service for processing.
+		}
+
+		@Override
+		protected void onRegistered(final String newRegistrationId) {
+			// You start the registration process by calling startRegister() in
+			// your Main
+			// Activity. When the registration ID is ready, ADM calls
+			// onRegistered() on
+			// your app. Transmit the passed-in registration ID to your server,
+			// so your
+			// server can send messages to this app instance. onRegistered() is
+			// also
+			// called if your registration ID is rotated or changed for any
+			// reason; your
+			// app should pass the new registration ID to your server if this
+			// occurs.
+			// Your server needs to be able to handle a registration ID up to
+			// 1536 characters
+			// in length.
+
+			// The following is an example of sending the registration ID to
+			// your
+			// server via a header key/value pair over HTTP.
+
+		}
+
+		@Override
+		protected void onUnregistered(final String registrationId) {
+			// If your app is unregistered on this device, inform your server
+			// that
+			// this app instance is no longer a valid target for messages.
+		}
+
+		@Override
+		protected void onRegistrationError(final String errorId) {
+			// You should consider a registration error fatal. In response, your
+			// app may
+			// degrade gracefully, or you may wish to notify the user that this
+			// part of
+			// your app's functionality is not available.
+		}
+
+		@Override
+		protected void onMessage(final Intent intent) {
+			// Extract the message content from the set of extras attached to
+			// the com.amazon.device.messaging.intent.RECEIVE intent.
+
+			// Create strings to access the message and timeStamp fields from
+			// the JSON data.
+			final String msgKey = "";
+			final String timeKey = "";
+
+			// Obtain the intent action that will be triggered in onMessage()
+			// callback.
+			final String intentAction = "";
+
+			// Obtain the extras that were included in the intent.
+			final Bundle extras = intent.getExtras();
+
+			// Extract the message and time from the extras in the intent.
+			// ADM makes no guarantees about delivery or the order of messages.
+			// Due to varying network conditions, messages may be delivered more
+			// than once.
+			// Your app must be able to handle instances of duplicate messages.
+			final String msg = extras.getString(msgKey);
+			final String time = extras.getString(timeKey);
+		}
 	}
 
 }
-
